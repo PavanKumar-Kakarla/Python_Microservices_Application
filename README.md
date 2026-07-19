@@ -1,29 +1,43 @@
-# Amazon Microservices 
+# Python Microservices E-Commerce Application
+
+## Overview
+This project is a production-style Amazon-inspired e-commerce platform built using a microservices architecture.
 
 ## Tech Stack
 
+### Backend
 - Python
 - FastAPI
-- PostgreSQL
+- SQLAlchemy
+- Alembic
+
+### Frontend
 - React.js
-- Docker
+
+### Database
+- PostgreSQL
 - Redis
+
+### Messaging
 - RabbitMQ
-- AWS
+- Kafka
+
+### DevOps
+- Docker
+- Docker Compose
 - Kubernetes
 
-## Architecture
+### Cloud
+- AWS (EC2, RDS, S3, ECR, ECS)
 
-Microservices Architecture
-
-## Services
+## Planned Microservices
 
 - API Gateway
-- Authentication
-- User
-- Product
-- Inventory
-- Cart
-- Order
-- Payment
-- Notification
+- Authentication Service
+- User Service
+- Product Service
+- Inventory Service
+- Cart Service
+- Order Service
+- Payment Service
+- Notification Service
