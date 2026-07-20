@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
-from app.core.security import hash_password
+from app.core.security import hash_password, create_access_token, verify_password
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import UserCreate
+from app.schemas.user_schema import UserCreate, UserLogin, Token
+from app.core.exceptions import (
+    UserAlreadyExistsException,
+    InvalidCredentialsException
+)
 
 
 class AuthService:
@@ -21,10 +24,7 @@ class AuthService:
             )
 
             if existing_user:
-                raise HTTPException(
-                    status_code=409,
-                    detail="User already exists"
-                )
+                raise UserAlreadyExistsException()
             
             user = User(
                 email=user_data.email,
@@ -37,6 +37,42 @@ class AuthService:
             )
 
             return created_user
+        
+        except Exception:
+            raise
+
+    
+    @staticmethod
+    def login_user(
+        db: Session,
+        user_data: UserLogin
+    ) -> Token:
+        try:
+
+            user = UserRepository.get_user_by_email(
+                db=db,
+                email=user_data.email
+            )
+
+            if not user:
+                raise InvalidCredentialsException()
+            
+            if not verify_password(
+                user_data.password,
+                user.password_hash
+            ):
+                raise InvalidCredentialsException()
+            
+            access_token = create_access_token(
+                data={
+                    "sub": user.email
+                }
+            )
+
+            return Token(
+                access_token=access_token,
+                token_type="Bearer"
+            )
         
         except Exception:
             raise

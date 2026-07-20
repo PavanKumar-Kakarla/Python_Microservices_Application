@@ -1,4 +1,11 @@
+from datetime import datetime, timedelta, timezone
+
+from fastapi import HTTPException
+from jose import jwt, JWTError
 from passlib.context import CryptContext
+
+from app.core.config import settings
+
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
@@ -18,3 +25,34 @@ def verify_password(
         plain_password,
         hashed_password
     )
+
+
+def create_access_token(data: dict) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+    payload = data.copy()
+    payload.update({"exp": expire})
+
+    return jwt.encode(
+        payload,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+
+
+def decode_access_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        return payload
+    
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token."
+        )
