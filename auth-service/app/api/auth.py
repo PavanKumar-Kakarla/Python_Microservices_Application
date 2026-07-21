@@ -9,6 +9,8 @@ from app.schemas.user_schema import (
     UserResponse,
     UserLogin,
     Token,
+    RefreshTokenRequest,
+    AccessTokenResponse
 )
 from app.services.auth_service import AuthService
 
@@ -62,3 +64,15 @@ def get_me(
     current_user: User = Depends(get_current_user)
 ):
     return current_user
+
+
+@router.post(
+    "/refresh",
+    response_model=AccessTokenResponse
+)
+def refresh_access_token(
+    refresh_data: RefreshTokenRequest
+):
+    return AuthService.refresh_access_token(
+        refresh_data
+    )

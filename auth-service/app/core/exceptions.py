@@ -11,3 +11,8 @@ class InvalidCredentialsException(Exception):
 class UserNotFoundException(Exception):
     """Raised when a user cannot be found."""
     pass
+
+
+class InvalidRefreshTokenException(Exception):
+    """Raised when the refresh token is invalid or expired."""
+    pass

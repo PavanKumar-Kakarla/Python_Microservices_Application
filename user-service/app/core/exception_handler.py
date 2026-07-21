@@ -3,9 +3,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
     UserAlreadyExistsException,
-    InvalidCredentialsException,
-    UserNotFoundException,
-    InvalidRefreshTokenException
+    UserNotFoundException
 )
 
 
@@ -23,17 +21,6 @@ def register_exception_handlers(app: FastAPI):
             }
         )
     
-    @app.exception_handler(InvalidCredentialsException)
-    async def invalid_credentials_handler(
-        request: Request,
-        exc: InvalidCredentialsException
-    ):
-        return JSONResponse(
-            status_code=401,
-            content={
-                "detail": "Invalid email or password."
-            }
-        )
 
     @app.exception_handler(UserNotFoundException)
     async def user_not_found_handler(
@@ -44,17 +31,5 @@ def register_exception_handlers(app: FastAPI):
             status_code=404,
             content={
                 "detail": "User not found."
-            }
-        )
-    
-    @app.exception_handler(InvalidRefreshTokenException)
-    async def invalid_refresh_token_handler(
-        request: Request,
-        exc: InvalidRefreshTokenException
-    ):
-        return JSONResponse(
-            status_code=401,
-            content={
-                "detail": "Invalid refresh token."
             }
         )

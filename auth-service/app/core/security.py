@@ -33,7 +33,12 @@ def create_access_token(data: dict) -> str:
     )
 
     payload = data.copy()
-    payload.update({"exp": expire})
+    payload.update(
+        {
+            "exp": expire,
+            "type": "access"
+        }
+    )
 
     return jwt.encode(
         payload,
@@ -56,3 +61,25 @@ def decode_access_token(token: str) -> dict:
             status_code=401,
             detail="Invalid or expired token."
         )
+    
+
+def create_refresh_token(data: dict) -> str:
+
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
+
+    payload = data.copy()
+
+    payload.update(
+        {
+            "exp": expire,
+            "type": "refresh"
+        }
+    )
+
+    return jwt.encode(
+        payload,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
