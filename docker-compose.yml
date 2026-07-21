@@ -1,0 +1,65 @@
+services:
+  
+  postgres:
+
+    image: postgres:16
+
+    container_name: ecommerce-postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+
+    container_name: auth-service
+
+    restart: always
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - ./auth-service/.env
+    
+    environment:
+      DATABASE_HOST: postgres
+
+    ports:
+      - "8000:8000"
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    
+    container_name: user-service
+
+    restart: always
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - ./user-service/.env
+    
+    environment:
+      DATABASE_HOST: postgres
+
+    ports:
+      - "8001:8001"
+
+volumes:
+  
+  postgres_data:
