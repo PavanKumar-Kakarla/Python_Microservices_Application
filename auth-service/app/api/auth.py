@@ -10,7 +10,9 @@ from app.schemas.user_schema import (
     UserLogin,
     Token,
     RefreshTokenRequest,
-    AccessTokenResponse
+    AccessTokenResponse,
+    ValidateTokenRequest,
+    ValidateTokenResponse
 )
 from app.services.auth_service import AuthService
 
@@ -75,4 +77,17 @@ def refresh_access_token(
 ):
     return AuthService.refresh_access_token(
         refresh_data
+    )
+
+
+@router.post(
+    "/validate-token",
+    response_model=ValidateTokenResponse
+)
+def validate_token(
+    token_data: ValidateTokenRequest
+):
+
+    return AuthService.validate_token(
+        token_data
     )

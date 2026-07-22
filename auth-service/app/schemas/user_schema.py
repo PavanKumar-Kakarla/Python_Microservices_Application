@@ -31,3 +31,12 @@ class RefreshTokenRequest(BaseModel):
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+
+class ValidateTokenRequest(BaseModel):
+    access_token: str
+
+
+class ValidateTokenResponse(BaseModel):
+    valid: bool
+    email: str | None = None

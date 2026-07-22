@@ -3,7 +3,15 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, create_access_token, verify_password, create_refresh_token, decode_access_token
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import UserCreate, UserLogin, Token, AccessTokenResponse, RefreshTokenRequest
+from app.schemas.user_schema import (
+    UserCreate, 
+    UserLogin,
+    Token, 
+    AccessTokenResponse, 
+    RefreshTokenRequest,
+    ValidateTokenRequest,
+    ValidateTokenResponse
+)
 from app.core.exceptions import (
     UserAlreadyExistsException,
     InvalidCredentialsException,
@@ -179,3 +187,39 @@ class AuthService:
                 "Unexpected error while refreshing access token."
             )
             raise
+
+
+    @staticmethod
+    def validate_token(
+        token_data: ValidateTokenRequest
+    ) -> ValidateTokenResponse:
+
+        try:
+            payload = decode_access_token(
+                token_data.access_token
+            )
+
+            if payload.get("type") != "access":
+                return ValidateTokenResponse(
+                    valid=False
+                )
+
+            email = payload.get("sub")
+
+            if email is None:
+                return ValidateTokenResponse(
+                    valid=False
+                )
+
+            return ValidateTokenResponse(
+                valid=True,
+                email=email
+            )
+
+        except Exception:
+
+            logger.warning("Invalid access token received.")
+
+            return ValidateTokenResponse(
+                valid=False
+            )
