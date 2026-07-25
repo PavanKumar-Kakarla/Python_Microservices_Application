@@ -1,6 +1,8 @@
 venv/
-.git/
 __pycache__/
+*.pyc
+.git
 .env
 logs/
-.pytest_cache/
+.idea/
+.vscode/

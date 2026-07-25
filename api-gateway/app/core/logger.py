@@ -7,7 +7,7 @@ LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-logger = logging.getLogger("gateway_service")
+logger = logging.getLogger("api_gateway")
 logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter(
