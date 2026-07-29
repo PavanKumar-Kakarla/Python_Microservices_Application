@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     AUTH_SERVICE_URL: str
     USER_SERVICE_URL: str
+    PRODUCT_SERVICE_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env"

@@ -5,7 +5,7 @@ from app.services.gateway_service import GatewayService
 
 router = APIRouter(
     prefix="/gateway",
-    tags=["Gateway"]
+    tags=["Users"]
 )
 
 security = HTTPBearer()

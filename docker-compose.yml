@@ -58,6 +58,25 @@ services:
     networks:
       - ecommerce-network
 
+  product-service:
+    build: 
+      context: ./product-service
+      
+    container_name: product-service
+
+    env_file:
+      - ./product-service/.env
+
+    ports:
+      - "8002:8002"
+
+    depends_on:
+      - postgres
+      - auth-service
+
+    networks:
+      - ecommerce-network
+
   api-gateway:
 
     build:
@@ -71,6 +90,7 @@ services:
     depends_on:
       - auth-service
       - user-service
+      - product-service
 
     ports:
       - "8050:8050"
