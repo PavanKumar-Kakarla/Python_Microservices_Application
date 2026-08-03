@@ -65,3 +65,8 @@ def delete_user(
     )
 
     return Response(status_code=204)
+
+
+@router.get("/users/email/{email}")
+def get_user_by_email(email: str):
+    return GatewayService.get_user_by_email(email)

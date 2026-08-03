@@ -214,3 +214,20 @@ class UserProfileService:
                 "Unexpected error while deleting profile."
             )
             raise
+
+
+    @staticmethod
+    def get_user_by_email(
+        db: Session,
+        email: str
+    ):
+
+        user = UserProfileRepository.get_user_by_email(
+            db,
+            email
+        )
+
+        if not user:
+            raise UserNotFoundException()
+
+        return user

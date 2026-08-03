@@ -116,3 +116,12 @@ class GatewayService:
         )
 
         return response.status_code
+
+
+    @staticmethod
+    def get_user_by_email(email: str):
+        response = BaseHttpClient.get(
+            f"{settings.USER_SERVICE_URL}/users/email/{email}"
+        )
+
+        return response.json()
