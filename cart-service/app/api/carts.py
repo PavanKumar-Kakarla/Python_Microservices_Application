@@ -7,6 +7,7 @@ from app.schemas.auth_schema import ValidateTokenRequest
 from app.schemas.cart import (
     CartItemCreate,
     CartItemUpdate,
+    CartResponse
 )
 from app.services.cart_service import CartService
 
@@ -16,14 +17,17 @@ router = APIRouter(
 )
 
 
-@router.get("")
+@router.get(
+    "",
+    response_model=CartResponse
+)
 def get_cart(
     token: ValidateTokenRequest = Depends(validate_access_token),
     db: Session = Depends(get_db)
 ):
     return CartService.get_cart(
         db,
-        token.user_id
+        token.email
     )
 
 
@@ -38,7 +42,7 @@ def add_item(
 ):
     return CartService.add_item(
         db,
-        token.user_id,
+        token.email,
         request
     )
 
@@ -52,7 +56,7 @@ def update_item(
 ):
     return CartService.update_item(
         db,
-        token.user_id,
+        token.email,
         product_id,
         request
     )
@@ -66,7 +70,7 @@ def remove_item(
 ):
     return CartService.remove_item(
         db,
-        token.user_id,
+        token.email,
         product_id
     )
 
@@ -78,5 +82,5 @@ def clear_cart(
 ):
     return CartService.clear_cart(
         db,
-        token.user_id
+        token.email
     )

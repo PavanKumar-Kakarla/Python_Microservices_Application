@@ -77,6 +77,26 @@ services:
     networks:
       - ecommerce-network
 
+  cart-service:
+    build:
+      context: ./cart-service
+    
+    container_name: cart-service
+
+    env_file:
+      - ./cart-service/.env
+
+    ports:
+      - "8003:8003"
+
+    depends_on:
+      - postgres
+      - product-service
+      - user-service
+    
+    networks:
+      - ecommerce-network
+
   api-gateway:
 
     build:
@@ -91,6 +111,7 @@ services:
       - auth-service
       - user-service
       - product-service
+      - cart-service
 
     ports:
       - "8050:8050"

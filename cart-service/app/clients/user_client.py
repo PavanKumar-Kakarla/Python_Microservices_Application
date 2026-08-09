@@ -8,7 +8,7 @@ class UserClient:
     @staticmethod
     def get_user_by_email(email: str) -> UserResponse:
         response = BaseHttpClient.get(
-            f"{settings.API_GATEWAY_URL}/gateway/users/email/{email}"
+            f"{settings.USER_SERVICE_URL}/users/email/{email}"
         )
 
         return UserResponse(**response.json())

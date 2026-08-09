@@ -121,7 +121,64 @@ class GatewayService:
     @staticmethod
     def get_user_by_email(email: str):
         response = BaseHttpClient.get(
-            f"{settings.USER_SERVICE_URL}/users/email/{email}"
+            url=f"{settings.USER_SERVICE_URL}/users/email/{email}"
         )
 
         return response.json()
+
+
+    @staticmethod
+    def get_cart(headers: dict):
+
+        response = BaseHttpClient.get(
+            url=f"{settings.CART_SERVICE_URL}/cart",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def add_item(data: dict, headers: dict):
+
+        response = BaseHttpClient.post(
+            url=f"{settings.CART_SERVICE_URL}/cart/items",
+            headers=headers,
+            data=data
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def update_item(headers: dict, product_id: int, data: dict):
+
+        response = BaseHttpClient.put(
+            url=f"{settings.CART_SERVICE_URL}/cart/items/{product_id}",
+            headers=headers,
+            data=data
+        )
+
+        return response.json()
+    
+
+    @staticmethod
+    def remove_item(headers: dict, product_id: int):
+
+        response = BaseHttpClient.delete(
+            url=f"{settings.CART_SERVICE_URL}/cart/items/{product_id}",
+            headers=headers
+        )
+
+        return response.status_code
+
+
+    @staticmethod
+    def clear_cart(headers: dict):
+
+        response = BaseHttpClient.delete(
+            url=f"{settings.CART_SERVICE_URL}/cart",
+            headers=headers
+        )
+
+        return response.status_code

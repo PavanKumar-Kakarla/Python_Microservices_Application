@@ -8,6 +8,7 @@ from app.schemas.cart import (
     CartItemCreate,
     CartItemUpdate,
 )
+from app.clients.user_client import UserClient
 
 
 class CartService:
@@ -15,18 +16,20 @@ class CartService:
     @staticmethod
     def get_cart(
         db: Session,
-        user_id: int
+        email: str
     ) -> Cart:
+
+        user = CartService.get_user(email)
 
         cart = CartRepository.get_cart_by_user_id(
             db,
-            user_id
+            user.id
         )
 
         if not cart:
             cart = CartRepository.create_cart(
                 db,
-                user_id
+                user.id
             )
 
         return cart
@@ -35,13 +38,13 @@ class CartService:
     @staticmethod
     def add_item(
         db: Session,
-        user_id: int,
+        email: str,
         request: CartItemCreate
     ):
 
         cart = CartService.get_cart(
             db,
-            user_id
+            email
         )
 
         product = ProductClient.get_product(
@@ -80,14 +83,14 @@ class CartService:
     @staticmethod
     def update_item(
         db: Session,
-        user_id: int,
+        email: str,
         product_id: int,
         request: CartItemUpdate
     ):
 
         cart = CartService.get_cart(
             db,
-            user_id
+            email
         )
 
         item = CartRepository.get_cart_item(
@@ -112,13 +115,13 @@ class CartService:
     @staticmethod
     def remove_item(
         db: Session,
-        user_id: int,
+        email: str,
         product_id: int
     ):
 
         cart = CartService.get_cart(
             db,
-            user_id
+            email
         )
 
         item = CartRepository.get_cart_item(
@@ -146,12 +149,12 @@ class CartService:
     @staticmethod
     def clear_cart(
         db: Session,
-        user_id: int
+        email: str,
     ):
 
         cart = CartService.get_cart(
             db,
-            user_id
+            email
         )
 
         CartRepository.clear_cart(
@@ -162,3 +165,8 @@ class CartService:
         return {
             "message": "Cart cleared successfully"
         }
+
+
+    @staticmethod
+    def get_user(email: str):
+        return UserClient.get_user_by_email(email)

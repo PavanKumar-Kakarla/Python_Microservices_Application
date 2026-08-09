@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
@@ -13,8 +13,10 @@ class CartRepository:
         db: Session,
         user_id: int
     ) -> Cart | None:
+
         return (
             db.query(Cart)
+            .options(joinedload(Cart.items))
             .filter(Cart.user_id == user_id)
             .first()
         )
@@ -32,7 +34,13 @@ class CartRepository:
         db.commit()
         db.refresh(cart)
 
-        return cart
+        return (
+            db.query(Cart)
+            .options(joinedload(Cart.items))
+            .filter(Cart.id == cart.id)
+            .first()
+        )
+
 
     @staticmethod
     def get_cart_item(
