@@ -182,3 +182,48 @@ class GatewayService:
         )
 
         return response.status_code
+
+
+    @staticmethod
+    def get_orders(headers: dict):
+
+        response = BaseHttpClient.get(
+            url=f"{settings.ORDER_SERVICE_URL}/orders",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def create_order(headers: dict):
+
+        response = BaseHttpClient.post(
+            url=f"{settings.ORDER_SERVICE_URL}/orders",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def get_order(order_id: int, headers: dict):
+
+        response = BaseHttpClient.get(
+            url=f"{settings.ORDER_SERVICE_URL}/orders/{order_id}",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def update_order_status(order_id: int, data: dict, headers: dict):
+
+        response = BaseHttpClient.put(
+            url=f"{settings.ORDER_SERVICE_URL}/orders/{order_id}/status",
+            data=data,
+            headers=headers
+        )
+
+        return response.json()

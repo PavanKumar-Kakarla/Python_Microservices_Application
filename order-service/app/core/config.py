@@ -3,16 +3,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
 
-    APP_NAME: str
+    APP_NAME: str = "Order Service"
+
+    DATABASE_URL: str
 
     AUTH_SERVICE_URL: str
     USER_SERVICE_URL: str
     PRODUCT_SERVICE_URL: str
     CART_SERVICE_URL: str
-    ORDER_SERVICE_URL: str
 
     model_config = SettingsConfigDict(
-        env_file=".env"
+        env_file=".env",
+        extra="ignore"
     )
 
 
