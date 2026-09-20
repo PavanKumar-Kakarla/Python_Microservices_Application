@@ -8,7 +8,7 @@ class PaymentRepository:
     @staticmethod
     def create(db: Session, payment: Payment) -> Payment:
         db.add(payment)
-        db.commit()
+        db.flush()
         db.refresh(payment)
 
         return payment

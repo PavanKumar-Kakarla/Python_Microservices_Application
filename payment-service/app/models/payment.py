@@ -19,6 +19,7 @@ class Payment(Base):
     order_id: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
+        unique=True,
         index=True
     )
 

@@ -8,6 +8,7 @@ from app.schemas import PaymentCreate
 from app.services.payment_service import PaymentService
 from app.schemas.order_schema import OrderResponse
 from app.core.exceptions import PaymentProcessingException
+from sqlalchemy.exc import IntegrityError
 
 
 def create_test_order(
@@ -395,3 +396,56 @@ def test_create_payment_order_not_found():
             )
 
     assert exc.value.message == "Order not found"
+
+
+def test_create_payment_handles_duplicate_order_id():
+    db = MagicMock()
+
+    payment_data = PaymentCreate(
+        order_id=100,
+        amount=500,
+        currency="INR",
+        payment_method="CARD",
+    )
+
+    order = create_test_order(
+        order_id=100,
+        user_id=1,
+        status="PENDING",
+        total_amount=500.00,
+    )
+
+    existing_payment = create_test_payment(
+        payment_id=10,
+        order_id=100,
+        user_id=1,
+        amount=500.00,
+        status="PENDING",
+    )
+
+    with patch(
+        "app.services.payment_service.PaymentRepository.get_by_order_id",
+        side_effect=[None, existing_payment],
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=order,
+    ), patch(
+        "app.services.payment_service.PaymentRepository.create",
+        side_effect=IntegrityError(
+            "duplicate",
+            params=None,
+            orig=Exception("duplicate order_id"),
+        ),
+    ):
+        result = PaymentService.create_payment(
+            db=db,
+            payment_data=payment_data,
+            user_id=1,
+            access_token="test-access-token",
+        )
+
+    db.rollback.assert_called_once()
+
+    assert result is existing_payment
+    assert result.order_id == 100
+    assert result.user_id == 1

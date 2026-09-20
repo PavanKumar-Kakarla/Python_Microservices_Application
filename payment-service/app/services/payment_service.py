@@ -2,6 +2,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models import Payment
 from app.repositories import PaymentRepository
@@ -70,7 +71,24 @@ class PaymentService:
             transaction_id=None,
         )
 
-        return PaymentRepository.create(db, payment)
+        try:
+            payment = PaymentRepository.create(db, payment)
+            db.commit()
+            return payment
+
+        except IntegrityError:
+            db.rollback()
+
+            existing_payment = PaymentRepository.get_by_order_id(
+                db,
+                payment_data.order_id
+            )
+
+            if existing_payment:
+                return existing_payment
+
+            raise
+
 
     @staticmethod
     def get_payment(
