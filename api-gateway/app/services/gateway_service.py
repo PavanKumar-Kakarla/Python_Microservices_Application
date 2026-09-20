@@ -227,3 +227,47 @@ class GatewayService:
         )
 
         return response.json()
+
+
+    @staticmethod
+    def create_payment(data: dict, headers: dict):
+
+        response = BaseHttpClient.post(
+            url=f"{settings.PAYMENT_SERVICE_URL}/payments",
+            data=data,
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def get_payment(payment_id: int, headers: dict):
+
+        response = BaseHttpClient.get(
+            url=f"{settings.PAYMENT_SERVICE_URL}/payments/{payment_id}",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def get_payment_by_order(order_id: int, headers: dict):
+
+        response = BaseHttpClient.get(
+            url=f"{settings.PAYMENT_SERVICE_URL}/payments/order/{order_id}",
+            headers=headers
+        )
+
+        return response.json()
+
+
+    @staticmethod
+    def process_payment(payment_id: int, headers: dict):
+        response = BaseHttpClient.post(
+            url=f"{settings.PAYMENT_SERVICE_URL}/payments/{payment_id}/process",
+            headers=headers
+        )
+
+        return response.json()

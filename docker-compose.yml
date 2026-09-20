@@ -119,6 +119,27 @@ services:
     networks:
       - ecommerce-network
 
+  payment-service:
+    build:
+      context: ./payment-service
+
+    container_name: payment-service
+
+    env_file:
+      - ./payment-service/.env
+    
+    ports:
+      - "8005:8005"
+    
+    depends_on:
+      - postgres
+      - auth-service
+      - user-service
+      - order-service
+    
+    networks:
+      - ecommerce-network
+
   api-gateway:
 
     build:
@@ -135,6 +156,7 @@ services:
       - product-service
       - cart-service
       - order-service
+      - payment-service
 
     ports:
       - "8050:8050"
