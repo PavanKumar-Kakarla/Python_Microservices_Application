@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import validate_access_token
@@ -23,6 +23,7 @@ router = APIRouter(
 )
 def create_payment(
     request: PaymentCreate,
+    http_request: Request,
     token: ValidateTokenResponse = Depends(validate_access_token),
     db: Session = Depends(get_db)
 ):
@@ -40,10 +41,15 @@ def create_payment(
             detail="User is inactive"
         )
 
+    access_token = http_request.headers.get("Authorization", "").replace(
+        "Bearer ", ""
+    )
+
     return PaymentService.create_payment(
         db=db,
         payment_data=request,
-        user_id=user.id
+        user_id=user.id,
+        access_token=access_token
     )
 
 
@@ -133,6 +139,7 @@ def get_payment(
 )
 def process_payment(
     payment_id: int,
+    http_request: Request,
     token: ValidateTokenResponse = Depends(
         validate_access_token
     ),
@@ -168,7 +175,12 @@ def process_payment(
             detail="You are not authorized to process this payment"
         )
 
+    access_token = http_request.headers.get("Authorization", "").replace(
+        "Bearer ", ""
+    )
+
     return PaymentService.process_payment(
         db,
-        payment
+        payment,
+        access_token
     )

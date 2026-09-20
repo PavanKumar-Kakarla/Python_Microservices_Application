@@ -7,6 +7,7 @@ from app.models import Payment
 from app.repositories import PaymentRepository
 from app.schemas import PaymentCreate
 from app.core.exceptions import PaymentProcessingException
+from app.clients.order_client import OrderClient
 
 
 class PaymentService:
@@ -15,7 +16,8 @@ class PaymentService:
     def create_payment(
         db: Session,
         payment_data: PaymentCreate,
-        user_id: int
+        user_id: int,
+        access_token: str
     ) -> Payment:
 
         # Check whether a payment already exists for this order
@@ -27,6 +29,37 @@ class PaymentService:
         if existing_payment:
             return existing_payment
 
+        # Get Order from Order Service
+        order = OrderClient.get_order(
+            order_id=payment_data.order_id,
+            access_token=access_token
+        )
+
+        # Verify order exists
+        if not order:
+            raise PaymentProcessingException(
+                message="Order not found"
+            )
+
+        # Verify order ownership
+        if order.user_id != user_id:
+            raise PaymentProcessingException(
+                message="You are not authorized to create payment for this order"
+            )
+
+        # Verify order status
+        if order.status != "PENDING":
+            raise PaymentProcessingException(
+                message=f"Payment cannot be created for order status is {order.status}"
+            )
+
+        # Verify payment amount
+        if Decimal(payment_data.amount) != order.total_amount:
+            raise PaymentProcessingException(
+                message="Payment amount does not match order total amount"
+            )
+        
+        # Create Payment
         payment = Payment(
             order_id=payment_data.order_id,
             user_id=user_id,
@@ -64,23 +97,35 @@ class PaymentService:
     @staticmethod
     def process_payment(
         db: Session,
-        payment: Payment
+        payment: Payment,
+        access_token: str
     ) -> Payment:
 
+        # Already successful - idempotent behavior
         if payment.status == "SUCCESS":
             return payment
 
+        # Only PENDING payments can be processed
         if payment.status != "PENDING":
             raise PaymentProcessingException(
                 message=f"Payment cannot be processed from status: {payment.status}"
             )
 
+        # Process Payment
         payment.status = "SUCCESS"
         payment.transaction_id = (
             f"TXN-{uuid4().hex[:20].upper()}"
         )
 
-        return PaymentRepository.update(
+        payment = PaymentRepository.update(
             db,
             payment
         )
+
+        # Confirm the order after successful payment
+        OrderClient.confirm_order(
+            order_id=payment.order_id,
+            access_token=access_token
+        )
+
+        return payment

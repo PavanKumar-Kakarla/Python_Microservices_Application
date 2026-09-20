@@ -6,6 +6,22 @@ import pytest
 from app.models import Payment
 from app.schemas import PaymentCreate
 from app.services.payment_service import PaymentService
+from app.schemas.order_schema import OrderResponse
+from app.core.exceptions import PaymentProcessingException
+
+
+def create_test_order(
+    order_id=100,
+    user_id=1,
+    status="PENDING",
+    total_amount=500.00,
+):
+    return OrderResponse(
+        id=order_id,
+        user_id=user_id,
+        status=status,
+        total_amount=Decimal(str(total_amount)),
+    )
 
 
 def create_test_payment(
@@ -40,9 +56,19 @@ def test_create_payment():
 
     expected_payment = create_test_payment()
 
+    order = create_test_order(
+        order_id=100,
+        user_id=1,
+        status="PENDING",
+        total_amount=500.00,
+    )
+
     with patch(
         "app.services.payment_service.PaymentRepository.get_by_order_id",
         return_value=None,
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=order,
     ), patch(
         "app.services.payment_service.PaymentRepository.create",
         return_value=expected_payment,
@@ -52,6 +78,7 @@ def test_create_payment():
             db=db,
             payment_data=payment_data,
             user_id=1,
+            access_token="test-access-token",
         )
 
     assert result is expected_payment
@@ -83,6 +110,7 @@ def test_create_payment_returns_existing_payment():
             db=db,
             payment_data=payment_data,
             user_id=1,
+            access_token="test-access-token",
         )
 
     assert result is existing_payment
@@ -154,16 +182,24 @@ def test_process_payment():
     with patch(
         "app.services.payment_service.PaymentRepository.update",
         return_value=payment,
-    ):
+    ), patch(
+        "app.services.payment_service.OrderClient.confirm_order"
+    ) as mock_confirm_order:
 
         result = PaymentService.process_payment(
-            db,
-            payment,
+            db=db,
+            payment=payment,
+            access_token="test-access-token",
         )
 
     assert result.status == "SUCCESS"
     assert result.transaction_id is not None
     assert result.transaction_id.startswith("TXN-")
+
+    mock_confirm_order.assert_called_once_with(
+        order_id=payment.order_id,
+        access_token="test-access-token",
+    )
 
 
 def test_process_payment_already_successful():
@@ -176,14 +212,186 @@ def test_process_payment_already_successful():
 
     with patch(
         "app.services.payment_service.PaymentRepository.update"
-    ) as mock_update:
+    ) as mock_update, patch(
+        "app.services.payment_service.OrderClient.confirm_order"
+    ) as mock_confirm_order:
 
         result = PaymentService.process_payment(
-            db,
-            payment,
+            db=db,
+            payment=payment,
+            access_token="test-access-token",
         )
 
     assert result.status == "SUCCESS"
     assert result.transaction_id == "TXN-EXISTING-001"
 
     mock_update.assert_not_called()
+    mock_confirm_order.assert_not_called()
+
+
+def test_create_payment_order_belongs_to_different_user():
+    db = MagicMock()
+
+    payment_data = PaymentCreate(
+        order_id=100,
+        amount=500,
+        currency="INR",
+        payment_method="CARD",
+    )
+
+    order = create_test_order(
+        order_id=100,
+        user_id=2,
+        status="PENDING",
+        total_amount=500.00,
+    )
+
+    with patch(
+        "app.services.payment_service.PaymentRepository.get_by_order_id",
+        return_value=None,
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=order,
+    ):
+
+        with pytest.raises(PaymentProcessingException) as exc:
+            PaymentService.create_payment(
+                db=db,
+                payment_data=payment_data,
+                user_id=1,
+                access_token="test-access-token",
+            )
+
+    assert exc.value.message == (
+        "You are not authorized to create payment for this order"
+    )
+
+
+def test_create_payment_order_not_pending():
+    db = MagicMock()
+
+    payment_data = PaymentCreate(
+        order_id=100,
+        amount=500,
+        currency="INR",
+        payment_method="CARD",
+    )
+
+    order = create_test_order(
+        order_id=100,
+        user_id=1,
+        status="CONFIRMED",
+        total_amount=500.00,
+    )
+
+    with patch(
+        "app.services.payment_service.PaymentRepository.get_by_order_id",
+        return_value=None,
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=order,
+    ):
+
+        with pytest.raises(PaymentProcessingException) as exc:
+            PaymentService.create_payment(
+                db=db,
+                payment_data=payment_data,
+                user_id=1,
+                access_token="test-access-token",
+            )
+
+    assert exc.value.message == (
+        "Payment cannot be created for order status is CONFIRMED"
+    )
+
+
+def test_create_payment_amount_mismatch():
+    db = MagicMock()
+
+    payment_data = PaymentCreate(
+        order_id=100,
+        amount=400,
+        currency="INR",
+        payment_method="CARD",
+    )
+
+    order = create_test_order(
+        order_id=100,
+        user_id=1,
+        status="PENDING",
+        total_amount=500.00,
+    )
+
+    with patch(
+        "app.services.payment_service.PaymentRepository.get_by_order_id",
+        return_value=None,
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=order,
+    ):
+
+        with pytest.raises(PaymentProcessingException) as exc:
+            PaymentService.create_payment(
+                db=db,
+                payment_data=payment_data,
+                user_id=1,
+                access_token="test-access-token",
+            )
+
+    assert exc.value.message == (
+        "Payment amount does not match order total amount"
+    )
+
+
+def test_process_payment_invalid_status():
+    db = MagicMock()
+
+    payment = create_test_payment(
+        status="FAILED"
+    )
+
+    with patch(
+        "app.services.payment_service.OrderClient.confirm_order"
+    ) as mock_confirm_order:
+
+        with pytest.raises(PaymentProcessingException) as exc:
+            PaymentService.process_payment(
+                db=db,
+                payment=payment,
+                access_token="test-access-token",
+            )
+
+    assert exc.value.message == (
+        "Payment cannot be processed from status: FAILED"
+    )
+
+    mock_confirm_order.assert_not_called()
+
+
+def test_create_payment_order_not_found():
+    db = MagicMock()
+
+    payment_data = PaymentCreate(
+        order_id=999,
+        amount=500,
+        currency="INR",
+        payment_method="CARD",
+    )
+
+    with patch(
+        "app.services.payment_service.PaymentRepository.get_by_order_id",
+        return_value=None,
+    ), patch(
+        "app.services.payment_service.OrderClient.get_order",
+        return_value=None,
+    ):
+
+        with pytest.raises(PaymentProcessingException) as exc:
+            PaymentService.create_payment(
+                db=db,
+                payment_data=payment_data,
+                user_id=1,
+                access_token="test-access-token",
+            )
+
+    assert exc.value.message == "Order not found"
